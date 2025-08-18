@@ -1,4 +1,4 @@
-name: Deploy Remotely
+name: Deploy-Remotely
 on:
   push:
     branches: [ master ]
