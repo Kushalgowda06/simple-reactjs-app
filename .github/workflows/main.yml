@@ -38,4 +38,4 @@ jobs:
             docker pull mydockerusername/simple-reactjs-app:latest
             docker stop react-app || true
             docker rm react-app || true
-            docker run -d --name react-app -p 80:80 mydockerusername/simple-reactjs-app:latest
+            docker run -d --name simple-reactjs-app -p 80:80 mydockerusername/simple-reactjs-app:latest
