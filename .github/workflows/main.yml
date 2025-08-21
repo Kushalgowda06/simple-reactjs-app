@@ -23,7 +23,7 @@ jobs:
 
       # Push image to registry
       - name: Push Docker Image
-        run: docker tag my-react-app mydockerusername/simple-reactjs-app:latest
+        run: docker tag simple-reactjs-app mydockerusername/simple-reactjs-app:latest
       - name: Push image to DockerHub
         run: docker push mydockerusername/simple-reactjs-app:latest
 
