@@ -1,25 +1,41 @@
-name: Deploy-Remotely
+name: Deploy Docker Container
+
 on:
   push:
     branches: [ master ]
- 
+
 jobs:
-  Deploy-Remotely:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js 20.x to Build
-      uses: actions/setup-node@v2
-      with:
-        node-version: 20.x
-    - run: npm install
-    - run: CI=false npm run build
-    - name: Transfer Build Folder on EC2 Instance
-      uses: easingthemes/ssh-deploy@v2.1.4
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_KEY }}
-        REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
-        REMOTE_USER: ${{ secrets.DEPLOY_USER }}
-        REMOTE_PORT: ${{ secrets.DEPLOY_PORT }}
-        SOURCE: "build/"
-        TARGET: ${{ secrets.DEPLOY_TARGET }}
+      - uses: actions/checkout@v2
+
+      # Build the Docker image
+      - name: Build Docker Image
+        run: docker build -t my-react-app .
+
+      # Log in to Docker Hub or a registry
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Push image to registry
+      - name: Push Docker Image
+        run: docker tag my-react-app mydockerusername/my-react-app:latest
+      - name: Push image to DockerHub
+        run: docker push mydockerusername/my-react-app:latest
+
+      # SSH into EC2 and pull & run the container
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            docker pull mydockerusername/my-react-app:latest
+            docker stop react-app || true
+            docker rm react-app || true
+            docker run -d --name react-app -p 80:80 mydockerusername/my-react-app:latest
