@@ -12,7 +12,7 @@ jobs:
 
       # Build the Docker image
       - name: Build Docker Image
-        run: docker build -t my-react-app .
+        run: docker build -t simple-reactjs-app .
 
       # Log in to Docker Hub or a registry
       - name: Login to DockerHub
@@ -23,9 +23,9 @@ jobs:
 
       # Push image to registry
       - name: Push Docker Image
-        run: docker tag my-react-app mydockerusername/my-react-app:latest
+        run: docker tag my-react-app mydockerusername/simple-reactjs-app:latest
       - name: Push image to DockerHub
-        run: docker push mydockerusername/my-react-app:latest
+        run: docker push mydockerusername/simple-reactjs-app:latest
 
       # SSH into EC2 and pull & run the container
       - name: Deploy on EC2
@@ -35,7 +35,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
-            docker pull mydockerusername/my-react-app:latest
+            docker pull mydockerusername/simple-reactjs-app:latest
             docker stop react-app || true
             docker rm react-app || true
-            docker run -d --name react-app -p 80:80 mydockerusername/my-react-app:latest
+            docker run -d --name react-app -p 80:80 mydockerusername/simple-reactjs-app:latest
