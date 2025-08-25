@@ -1,4 +1,3 @@
-# .github/workflows/deploy-ec2.yml
 name: Deploy React App on EC2
 
 on:
@@ -19,27 +18,66 @@ jobs:
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_KEY }}
         script: |
+          # Log the start time for troubleshooting
+          echo "Starting the deployment process at $(date)"
+
+          # Check for available disk space
+          echo "Checking disk space..."
+          df -h
+
           # Install Docker if not installed
           if ! command -v docker &> /dev/null
           then
             echo "Docker not found. Installing Docker..."
-            sudo apt-get update
-            sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-            curl -fsSL https://get.docker.com -o get-docker.sh
-            sudo sh get-docker.sh
-            sudo usermod -aG docker $(whoami)
-            sudo systemctl enable docker
-            sudo systemctl start docker
+
+            # Update system packages
+            echo "Running apt-get update..."
+            sudo apt-get update || { echo "apt-get update failed"; exit 1; }
+
+            # Install required dependencies for Docker
+            echo "Installing dependencies for Docker..."
+            sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || { echo "Dependency installation failed"; exit 1; }
+
+            # Get Docker installation script
+            echo "Downloading Docker installation script..."
+            curl -fsSL https://get.docker.com -o get-docker.sh || { echo "Docker script download failed"; exit 1; }
+
+            # Run Docker installation script
+            echo "Running Docker installation script..."
+            sudo sh get-docker.sh || { echo "Docker installation failed"; exit 1; }
+
+            # Add user to docker group
+            echo "Adding user to Docker group..."
+            sudo usermod -aG docker $(whoami) || { echo "Failed to add user to Docker group"; exit 1; }
+
+            # Enable and start Docker service
+            echo "Starting Docker service..."
+            sudo systemctl enable docker || { echo "Failed to enable Docker service"; exit 1; }
+            sudo systemctl start docker || { echo "Failed to start Docker service"; exit 1; }
           else
             echo "Docker is already installed"
           fi
 
+          # Check Docker version to ensure it's installed
+          echo "Checking Docker version..."
+          docker --version || { echo "Docker version check failed"; exit 1; }
+
           # Pull the Docker image
-          docker pull ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest
+          echo "Pulling the Docker image ${ { secrets.DOCKER_USERNAME } }/simple-reactjs-app:latest"
+          docker pull ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest || { echo "Docker pull failed"; exit 1; }
 
           # Stop and remove any existing container
+          echo "Stopping and removing any existing container..."
           sudo docker stop simple-reactjs-app || true
           sudo docker rm simple-reactjs-app || true
 
-          # Run the new container (on port 80)
-          sudo docker run -d --name simple-reactjs-app -p 80:80 ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest
+          # Run the Docker container
+          echo "Running the Docker container on port 80..."
+          sudo docker run -d --name simple-reactjs-app -p 80:80 ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest || { echo "Docker run failed"; exit 1; }
+
+          # Check Docker container status
+          echo "Checking running Docker containers..."
+          sudo docker ps
+
+          # Confirm successful deployment
+          echo "Deployment completed successfully at $(date)"
