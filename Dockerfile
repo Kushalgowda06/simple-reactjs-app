@@ -1,24 +1,50 @@
-# 1. Build stage: build your React app using Node.js
-FROM node:20 AS build
+name: Deploy React App on EC2
 
-WORKDIR /app
+on:
+  push:
+    branches:
+      - master
 
-# Copy package files and install dependencies
-COPY package*.json ./
-RUN npm install
+jobs:
+  build_and_push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
 
-# Copy rest of the source code and build the app
-COPY . .
-RUN npm run build
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-# 2. Production stage: serve built files with Nginx
-FROM nginx:alpine
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-# Copy built files from previous stage to nginx web directory
-COPY --from=build /app/build /usr/share/nginx/html
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-# Expose port 80 for the web server
-EXPOSE 80
+      # Build and push Docker image
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest
 
-# Start Nginx server
-CMD ["nginx", "-g", "daemon off;"]
+  deploy:
+    name: Deploy Docker Container to EC2
+    runs-on: ubuntu-latest
+    needs: build_and_push
+
+    steps:
+      # Deploy using SSH and pull the Docker image on EC2
+      - name: Deploy on EC2 via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            # Pull the Docker image from Docker Hub
+            docker pull ${{ secrets.DOCKER_USE_
