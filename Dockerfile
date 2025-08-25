@@ -20,32 +20,24 @@ jobs:
             if ! command -v docker &> /dev/null
             then
               echo "Docker not found. Installing Docker..."
-              sudo apt-get update
-              sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-              curl -fsSL https://get.docker.com -o get-docker.sh
-              sudo sh get-docker.sh
-              sudo usermod -aG docker $(whoami)
-              sudo systemctl enable docker
-              sudo systemctl start docker
+              sudo apt-get update || { echo "apt-get update failed"; exit 1; }
+              sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || { echo "Docker dependencies installation failed"; exit 1; }
+              curl -fsSL https://get.docker.com -o get-docker.sh || { echo "Docker script download failed"; exit 1; }
+              sudo sh get-docker.sh || { echo "Docker installation failed"; exit 1; }
+              sudo usermod -aG docker $(whoami) || { echo "Failed to add user to Docker group"; exit 1; }
+              sudo systemctl enable docker || { echo "Failed to enable Docker service"; exit 1; }
+              sudo systemctl start docker || { echo "Failed to start Docker service"; exit 1; }
             else
               echo "Docker is already installed"
             fi
 
+            # Docker login (for private images)
+            echo "Logging into Docker..."
+            echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin || { echo "Docker login failed"; exit 1; }
+
             # Pull the Docker image
             echo "Pulling the Docker image kushalgowda06/simple-reactjs-app:latest"
-            docker pull kushalgowda06/simple-reactjs-app:latest
+            docker pull kushalgowda06/simple-reactjs-app:latest || { echo "Docker pull failed"; exit 1; }
 
             # Stop and remove any existing container
             echo "Stopping and removing any existing container..."
-            sudo docker stop simple-reactjs-app || true
-            sudo docker rm simple-reactjs-app || true
-
-            # Run the Docker container
-            echo "Running the Docker container on port 80..."
-            sudo docker run -d --name simple-reactjs-app -p 80:80 kushalgowda06/simple-reactjs-app:latest
-
-            # Check Docker container status
-            echo "Checking running Docker containers..."
-            sudo docker ps
-
-            echo "Deployment completed successfully at $(date)"
