@@ -1,3 +1,4 @@
+# .github/workflows/deploy-ec2.yml
 name: Deploy React App on EC2
 
 on:
@@ -20,36 +21,36 @@ jobs:
         script: |
           # Log the start time for troubleshooting
           echo "Starting the deployment process at $(date)"
-
+          
           # Check for available disk space
           echo "Checking disk space..."
           df -h
-
+          
           # Install Docker if not installed
           if ! command -v docker &> /dev/null
           then
             echo "Docker not found. Installing Docker..."
-
+            
             # Update system packages
             echo "Running apt-get update..."
             sudo apt-get update || { echo "apt-get update failed"; exit 1; }
-
+            
             # Install required dependencies for Docker
             echo "Installing dependencies for Docker..."
             sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || { echo "Dependency installation failed"; exit 1; }
-
+            
             # Get Docker installation script
             echo "Downloading Docker installation script..."
             curl -fsSL https://get.docker.com -o get-docker.sh || { echo "Docker script download failed"; exit 1; }
-
+            
             # Run Docker installation script
             echo "Running Docker installation script..."
             sudo sh get-docker.sh || { echo "Docker installation failed"; exit 1; }
-
+            
             # Add user to docker group
             echo "Adding user to Docker group..."
             sudo usermod -aG docker $(whoami) || { echo "Failed to add user to Docker group"; exit 1; }
-
+            
             # Enable and start Docker service
             echo "Starting Docker service..."
             sudo systemctl enable docker || { echo "Failed to enable Docker service"; exit 1; }
@@ -63,7 +64,7 @@ jobs:
           docker --version || { echo "Docker version check failed"; exit 1; }
 
           # Pull the Docker image
-          echo "Pulling the Docker image ${ { secrets.DOCKER_USERNAME } }/simple-reactjs-app:latest"
+          echo "Pulling the Docker image ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest"
           docker pull ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest || { echo "Docker pull failed"; exit 1; }
 
           # Stop and remove any existing container
