@@ -1,4 +1,4 @@
-# .github/workflows/deploy-ec2.yml
+## .github/workflows/deploy-ec2.yml
 name: Deploy React App on EC2
 
 on:
