@@ -1,30 +1,29 @@
-name: Build and Push Docker Image
+# Step 1: Use an official Node.js image as a base image
+FROM node:16 AS build
 
-on:
-  push:
-    branches:
-      - master  # Make sure this matches your branch
+# Step 2: Set the working directory inside the container
+WORKDIR /app
 
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
+# Step 3: Copy package.json and package-lock.json to the container
+COPY package.json package-lock.json ./
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+# Step 4: Install dependencies
+RUN npm install
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+# Step 5: Copy the rest of the app's code into the container
+COPY . .
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+# Step 6: Build the React app for production
+RUN npm run build
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: kushalgowda06/simple-reactjs-app:latest
+# Step 7: Use Nginx to serve the app
+FROM nginx:alpine
+
+# Step 8: Copy the build folder from the build container to the Nginx container
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Step 9: Expose the port the app will run on
+EXPOSE 80
+
+# Step 10: Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
