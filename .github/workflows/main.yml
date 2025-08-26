@@ -71,7 +71,7 @@ jobs:
 
           echo "Stopping existing container if any..."
           sudo docker stop simple-reactjs-app || true
-          sudo docker rm simple-reactjs-app || true
+          sudo docker rm simple-reactjs-app || true 
 
           echo "Running new container..."
           sudo docker run -d --name simple-reactjs-app -p 80:80 ${{ secrets.DOCKER_USERNAME }}/simple-reactjs-app:latest
