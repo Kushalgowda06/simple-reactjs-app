@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: us-west-1                   # Replace with your ECR region
-  AWS_ACCOUNT_ID: 123456789012            # Replace with your AWS Account ID
+  AWS_REGION: us-west-1
+  AWS_ACCOUNT_ID: 123456789012
   ECR_REPOSITORY: react_application_demo
   CONTAINER_NAME: react-app
   CONTAINER_PORT: 80
@@ -45,6 +45,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          set -e
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -64,6 +65,7 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           envs: AWS_REGION,AWS_ACCOUNT_ID,ECR_REPOSITORY,CONTAINER_NAME,CONTAINER_PORT,HOST_PORT
           script: |
+            set -e
             echo "===== Starting Deployment ====="
 
             # Install Docker if missing
