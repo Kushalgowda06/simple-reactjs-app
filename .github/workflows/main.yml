@@ -46,6 +46,8 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           set -e
+          echo "Removing old local image (if exists)..."
+          docker rmi $ECR_REGISTRY/$ECR_REPOSITORY:latest || true
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -82,6 +84,9 @@ jobs:
             echo "Logging in to Amazon ECR..."
             aws ecr get-login-password --region $AWS_REGION | \
               sudo docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+            echo "Removing existing image (if exists)..."
+            sudo docker rmi $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest || true
 
             echo "Pulling latest image..."
             sudo docker pull $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
